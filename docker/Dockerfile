@@ -1,10 +1,10 @@
-FROM ubuntu:18.04
+FROM rust:1.41.0-slim-buster
 
 WORKDIR /build
 
-RUN apt update && apt install -y curl build-essential musl-tools libssl-dev ca-certificates
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly --target x86_64-unknown-linux-musl
-ENV PATH=/root/.cargo/bin/:$PATH
+RUN rustup target add x86_64-unknown-linux-musl
+RUN apt update && \
+    apt install -y --no-install-recommends build-essential musl-tools libssl-dev
 
 COPY Cargo.toml Cargo.lock ./
 COPY .cargo .cargo
@@ -12,11 +12,11 @@ RUN mkdir src && echo "fn main() {}" > src/main.rs
 RUN cargo build
 
 COPY . .
-RUN cargo build --out-dir out -Z unstable-options
+RUN cargo build
 
 
-FROM ubuntu:18.04
+FROM debian:10.2-slim
 
 WORKDIR /app
 RUN apt update && apt install -y ca-certificates
-COPY --from=0 /build/out/ ./
+COPY --from=0 /build/target/x86_64-unknown-linux-musl/debug/azusa azusa
