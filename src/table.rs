@@ -13,28 +13,28 @@ impl Table {
         uuid::Uuid::new_v4().to_string()
     }
 
-    pub async fn add(&self, id: String, pg: Progress) {
-        self.0.lock().await.insert(id.clone(), pg);
+    pub async fn add(&self, id: &str, pg: Progress) {
+        self.0.lock().await.insert(id.to_string(), pg);
     }
 
-    pub async fn delete(&self, id: String) {
-        self.0.lock().await.remove(&id);
+    pub async fn delete(&self, id: &str) {
+        self.0.lock().await.remove(id);
     }
 
-    pub async fn set_total(&self, id: String, total: u64) {
-        self.0.lock().await.get_mut(&id).map(|pg| {
+    pub async fn set_total(&self, id: &str, total: u64) {
+        self.0.lock().await.get_mut(id).map(|pg| {
             pg.set_total(total);
         });
     }
 
-    pub async fn progress(&self, id: String, size: u64) {
-        self.0.lock().await.get_mut(&id).map(|pg| {
+    pub async fn progress(&self, id: &str, size: u64) {
+        self.0.lock().await.get_mut(id).map(|pg| {
             pg.progress(size);
         });
     }
 
-    pub async fn cancel(&self, id: String) {
-        self.0.lock().await.get_mut(&id).map(|pg| {
+    pub async fn cancel(&self, id: &str) {
+        self.0.lock().await.get_mut(id).map(|pg| {
             pg.cancel();
         });
     }
