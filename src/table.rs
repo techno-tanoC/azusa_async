@@ -34,6 +34,12 @@ impl Table {
         });
     }
 
+    pub async fn is_canceled(&self, id: &str) -> Option<bool> {
+        self.0.lock().await.get(id).map(|pg| {
+            pg.is_canceled()
+        })
+    }
+
     pub async fn cancel(&self, id: &str) {
         self.0.lock().await.get_mut(id).map(|pg| {
             pg.cancel();

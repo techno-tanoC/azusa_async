@@ -26,6 +26,10 @@ impl Progress {
         self.total = total;
     }
 
+    pub fn is_canceled(&self) -> bool {
+        self.canceled
+    }
+
     pub fn cancel(&mut self) {
         self.canceled = true;
     }
