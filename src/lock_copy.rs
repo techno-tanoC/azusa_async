@@ -59,4 +59,3 @@ impl LockCopy {
         name.to_string() + &count + &ext
     }
 }
-
