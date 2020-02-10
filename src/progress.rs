@@ -30,3 +30,4 @@ impl Progress {
         self.canceled = true;
     }
 }
+
