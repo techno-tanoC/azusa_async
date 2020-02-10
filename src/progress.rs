@@ -9,8 +9,13 @@ pub struct Progress {
 }
 
 impl Progress {
-    pub fn new(name: String, total: u64, size: u64) -> Self {
-        Progress { name, total, size, canceled: false }
+    pub fn new(name: String) -> Self {
+        Progress {
+            name,
+            total: 0,
+            size: 0,
+            canceled: false
+        }
     }
 
     pub fn progress(&mut self, size: u64) {
