@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use tokio::sync::Mutex;
+
 use super::progress::Progress;
 
 pub struct Table(Mutex<HashMap<String, Progress>>);
@@ -40,9 +41,11 @@ impl Table {
     }
 
     pub async fn to_vec(&self) -> Vec<(String, Progress)> {
-        self.0.lock().await.iter().map(|(k, v)| {
-            (k.clone(), v.clone())
-        }).collect()
+        self.0
+            .lock()
+            .await
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect()
     }
 }
-

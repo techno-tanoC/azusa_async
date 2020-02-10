@@ -5,7 +5,7 @@ pub struct Progress {
     name: String,
     total: u64,
     size: u64,
-    canceled: bool
+    canceled: bool,
 }
 
 impl Progress {
@@ -14,7 +14,7 @@ impl Progress {
             name,
             total: 0,
             size: 0,
-            canceled: false
+            canceled: false,
         }
     }
 
@@ -30,4 +30,3 @@ impl Progress {
         self.canceled = true;
     }
 }
-
