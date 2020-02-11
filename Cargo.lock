@@ -39,6 +39,7 @@ version = "0.1.0"
 dependencies = [
  "gotham",
  "lazy_static",
+ "libc",
  "reqwest",
  "serde",
  "serde_json",
