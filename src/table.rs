@@ -52,3 +52,44 @@ impl Table {
         }).collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_new() {
+        let table = Table::new();
+        assert_eq!(*table.0.lock().await, HashMap::new());
+    }
+
+    #[test]
+    fn test_generate_id() {
+        let id = Table::generate_id();
+        assert!(id.len() == 36);
+    }
+
+    #[tokio::test]
+    async fn test_simulate() {
+        let table = Table::new();
+        let id = Table::generate_id();
+        let pg = Progress::new("hello".to_string());
+
+        table.add(&id, pg).await;
+        table.set_total(&id, 1000).await;
+        table.progress(&id, 100).await;
+        table.progress(&id, 100).await;
+        table.progress("non exists", 100).await;
+        table.cancel(&id).await;
+
+        let vec = table.to_vec().await;
+        let mut ans = Progress::new("hello".to_string());
+        ans.set_total(1000);
+        ans.progress(200);
+        ans.cancel();
+        assert_eq!(vec, vec![(id.clone(), ans)]);
+
+        table.delete(&id).await;
+        assert_eq!(*table.0.lock().await, HashMap::new());
+    }
+}
