@@ -68,3 +68,32 @@ impl LockCopy {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_fresh_name() {
+        let fresh = LockCopy::fresh_name(&".", "dummy", "toml");
+        assert_eq!(fresh.to_string_lossy(), "./dummy.toml".to_string());
+
+        let fresh = LockCopy::fresh_name(&".", "Cargo", "toml");
+        assert_eq!(fresh.to_string_lossy(), "./Cargo(1).toml".to_string());
+    }
+
+    #[test]
+    fn test_build_name() {
+        let name = LockCopy::build_name("hello", 0, "jpg");
+        assert_eq!(name, "hello.jpg");
+
+        let name = LockCopy::build_name("hello", 1, "jpg");
+        assert_eq!(name, "hello(1).jpg");
+
+        let name = LockCopy::build_name("hello", 0, "");
+        assert_eq!(name, "hello");
+
+        let name = LockCopy::build_name("hello", 1, "");
+        assert_eq!(name, "hello(1)");
+    }
+}
