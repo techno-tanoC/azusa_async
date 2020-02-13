@@ -43,7 +43,7 @@ impl Download {
             } else {
                 app.table.progress(id, byte.as_ref().len() as u64).await;
                 f.write_all(&byte).await.unwrap();
-                println!("{:?}", app.table.to_vec().await)
+                println!("{:?}", app.table.to_vec().await);
             }
         }
         return true;
