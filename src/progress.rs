@@ -1,11 +1,9 @@
-use serde::Serialize;
-
-#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Progress {
-    name: String,
-    total: u64,
-    size: u64,
-    canceled: bool,
+    pub name: String,
+    pub total: u64,
+    pub size: u64,
+    pub canceled: bool,
 }
 
 impl Progress {
