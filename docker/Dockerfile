@@ -9,14 +9,14 @@ RUN apt update && \
 COPY Cargo.toml Cargo.lock ./
 COPY .cargo .cargo
 RUN mkdir src && echo "fn main() {}" > src/main.rs
-RUN cargo build
+RUN cargo build --release
 
 COPY . .
-RUN cargo build
+RUN cargo build --release
 
 
 FROM debian:10.2-slim
 
 WORKDIR /app
 RUN apt update && apt install -y ca-certificates
-COPY --from=0 /build/target/x86_64-unknown-linux-musl/debug/azusa azusa
+COPY --from=0 /build/target/x86_64-unknown-linux-musl/release/azusa azusa
