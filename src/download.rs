@@ -18,10 +18,14 @@ impl Download {
         let (temp, path) = tempfile::NamedTempFile::new().unwrap().into_parts();
         let mut f: File = temp.into();
         let mut res = self.0.get(url).send().await.unwrap();
+
+        debug!("{:?}", &res);
+
         if res.status().is_success() {
             let id = Table::generate_id();
             let pg = Progress::new(name.to_string());
             app.table.add(&id, pg).await;
+            debug!("url: {:?}, id: {:?}", url, &id);
 
             if let Some(cl) = Self::content_length(&res) {
                 app.table.set_total(&id, cl).await;
@@ -39,11 +43,11 @@ impl Download {
     async fn read_chunks(app: &App, id: &str, res: &mut reqwest::Response, f: &mut File) -> bool {
         while let Some(byte) = res.chunk().await.unwrap() {
             if app.table.is_canceled(id).await.unwrap() {
+                debug!("canceled id: {:?}", id);
                 return false;
             } else {
                 app.table.progress(id, byte.as_ref().len() as u64).await;
                 f.write_all(&byte).await.unwrap();
-                println!("{:?}", app.table.to_vec().await);
             }
         }
         return true;
