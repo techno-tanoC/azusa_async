@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use super::progress::Progress;
 
-#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Item {
     pub id: String,
     pub name: String,
