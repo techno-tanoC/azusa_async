@@ -15,7 +15,7 @@ impl LockCopy {
         P: AsRef<Path>,
         Q: AsRef<Path>,
     {
-        let _ = self.0.lock().await;
+        let _lock = self.0.lock().await;
         let from = from.as_ref().to_path_buf();
         let path = path.as_ref().to_path_buf();
         let name = name.to_string();
