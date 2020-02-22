@@ -8,5 +8,7 @@ services:
     command: ./static-rocket
     ports:
       - "8000:8000"
+    volumes:
+      - "./data:/data"
     tty: true
     stdin_open: true
