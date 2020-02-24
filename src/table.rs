@@ -11,6 +11,7 @@ impl Table {
     }
 
     pub fn generate_id() -> String {
+        // todo: 時刻順のデータに変える
         uuid::Uuid::new_v4().to_string()
     }
 
