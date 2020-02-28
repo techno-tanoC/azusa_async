@@ -11,8 +11,11 @@ impl Table {
     }
 
     pub fn generate_id() -> String {
-        // todo: 時刻順のデータに変える
-        uuid::Uuid::new_v4().to_string()
+        use rand::{thread_rng, Rng};
+
+        let unix_time = chrono::offset::Local::now().timestamp_nanos();
+        let rand = thread_rng().gen_range(10_000, 100_000);
+        format!("{}-{}", unix_time, rand)
     }
 
     pub async fn add(&self, id: &str, pg: Progress) {
