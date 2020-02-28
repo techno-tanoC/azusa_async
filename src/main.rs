@@ -6,6 +6,7 @@ mod lock_copy;
 mod progress;
 mod item;
 mod table;
+mod error;
 
 use serde::Deserialize;
 use std::convert::Infallible;

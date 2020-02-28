@@ -3,6 +3,8 @@ use std::path::*;
 use tokio::sync::Mutex;
 use tokio::task;
 
+use super::error::Result;
+
 pub struct LockCopy(Mutex<()>);
 
 impl LockCopy {
@@ -10,11 +12,13 @@ impl LockCopy {
         LockCopy(Mutex::new(()))
     }
 
-    pub async fn copy<P, Q>(&self, from: &P, path: &Q, name: &str, ext: &str)
+    pub async fn copy<P, Q>(&self, from: &P, path: &Q, name: &str, ext: &str) -> Result<()>
     where
         P: AsRef<Path>,
         Q: AsRef<Path>,
     {
+        info!("lock_copy::copy {:?} {:?} {:?} {:?}", from.as_ref(), path.as_ref(), name, ext);
+
         let _lock = self.0.lock().await;
         let from = from.as_ref().to_path_buf();
         let path = path.as_ref().to_path_buf();
@@ -23,9 +27,10 @@ impl LockCopy {
 
         task::spawn_blocking(move || {
             let fresh = Self::fresh_name(&path, &name, &ext);
-            std::fs::copy(&from, &fresh).expect("failed to copy");
-            Self::change_owner(&fresh);
-        }).await.unwrap();
+            let _ = std::fs::copy(&from, &fresh)?;
+            Self::change_owner(&fresh)?;
+            Ok(())
+        }).await?
     }
 
     fn fresh_name<P: AsRef<Path>>(path: &P, name: &str, ext: &str) -> PathBuf {
@@ -34,6 +39,7 @@ impl LockCopy {
             let name = Self::build_name(name, i, ext);
             let candidate = path.as_ref().join(name);
             if candidate.exists() {
+                debug!("lock_copy::fresh_name duplicate {:?}", candidate);
                 i += 1;
             } else {
                 return candidate.to_path_buf();
@@ -57,15 +63,13 @@ impl LockCopy {
         name.to_string() + &count + &ext
     }
 
-    fn change_owner<P: AsRef<Path>>(path: &P) {
+    fn change_owner<P: AsRef<Path>>(path: &P) -> Result<()> {
         use std::os::unix::ffi::OsStrExt;
         use std::ffi::CString;
 
         let bytes = path.as_ref().as_os_str().as_bytes();
-        let s = CString::new(bytes).unwrap();
-        unsafe {
-            libc::chown(s.as_ptr(), 1000, 1000);
-        }
+        CString::new(bytes).map(|s| unsafe { libc::chown(s.as_ptr(), 1000, 1000); })?;
+        Ok(())
     }
 }
 
