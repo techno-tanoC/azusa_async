@@ -22,6 +22,8 @@ async fn main() {
 }
 
 async fn fetch(app: Arc<App>) -> Result<impl warp::Reply, Infallible> {
+    debug!("[GET] /download");
+
     let mut vec: Vec<_> = app.table.to_vec().await.into_iter().map(|(i, pg)| {
         item::Item::from_progress(i, pg)
     }).collect();
@@ -38,7 +40,7 @@ struct Start {
 }
 
 async fn start(start: Start, app: Arc<App>) -> Result<impl warp::Reply, Infallible> {
-    info!("{:?}", &start);
+    info!("[POST] /download {:?}", &start);
 
     let path = ".";
 
@@ -55,7 +57,7 @@ struct Cancel {
 }
 
 async fn cancel(cancel: Cancel, app: Arc<App>) -> Result<impl warp::Reply, Infallible> {
-    info!("{:?}", &cancel);
+    info!("[DELETE] /download {:?}", &cancel);
 
     tokio::spawn(async move {
         app.table.cancel(&cancel.id).await;
