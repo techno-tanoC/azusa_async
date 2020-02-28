@@ -19,7 +19,7 @@ impl Table {
     }
 
     pub async fn delete(&self, id: &str) {
-        self.0.lock().await.remove(id);
+        self.0.lock().await.shift_remove(id);
     }
 
     pub async fn set_total(&self, id: &str, total: u64) {
