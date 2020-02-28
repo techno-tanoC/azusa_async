@@ -60,7 +60,7 @@ mod tests {
     #[tokio::test]
     async fn test_new() {
         let table = Table::new();
-        assert_eq!(*table.0.lock().await, HashMap::new());
+        assert_eq!(*table.0.lock().await, IndexMap::new());
     }
 
     #[test]
@@ -90,6 +90,6 @@ mod tests {
         assert_eq!(vec, vec![(id.clone(), ans)]);
 
         table.delete(&id).await;
-        assert_eq!(*table.0.lock().await, HashMap::new());
+        assert_eq!(*table.0.lock().await, IndexMap::new());
     }
 }
