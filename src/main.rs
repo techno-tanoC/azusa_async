@@ -74,7 +74,7 @@ fn routes() -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> 
 
     let post = warp::path!("download")
         .and(warp::post())
-        .and(warp::body::content_length_limit(16 * 1024))
+        .and(warp::body::content_length_limit(1024 * 1024))
         .and(warp::body::json())
         .and(with_app(app.clone()))
         .and_then(start);
