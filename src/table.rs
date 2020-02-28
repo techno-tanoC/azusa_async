@@ -1,17 +1,16 @@
-use std::collections::HashMap;
+use indexmap::IndexMap;
 use tokio::sync::Mutex;
 
 use super::progress::Progress;
 
-pub struct Table(Mutex<HashMap<String, Progress>>);
+pub struct Table(Mutex<IndexMap<String, Progress>>);
 
 impl Table {
     pub fn new() -> Self {
-        Table(Mutex::new(HashMap::new()))
+        Table(Mutex::new(IndexMap::new()))
     }
 
     pub fn generate_id() -> String {
-        // todo: 時刻順のデータに変える
         uuid::Uuid::new_v4().to_string()
     }
 

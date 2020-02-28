@@ -49,6 +49,7 @@ name = "azusa"
 version = "0.1.0"
 dependencies = [
  "env_logger",
+ "indexmap",
  "lazy_static",
  "libc",
  "log 0.4.8",
