@@ -24,10 +24,9 @@ async fn main() {
 async fn fetch(app: Arc<App>) -> Result<impl warp::Reply, Infallible> {
     debug!("[GET] /download");
 
-    let mut vec: Vec<_> = app.table.to_vec().await.into_iter().map(|(i, pg)| {
+    let vec: Vec<_> = app.table.to_vec().await.into_iter().map(|(i, pg)| {
         item::Item::from_progress(i, pg)
     }).collect();
-    vec.sort();
 
     Ok(warp::reply::json(&vec))
 }
