@@ -9,6 +9,7 @@ pub enum Error {
     StdIoError(io::Error),
     JoinError(task::JoinError),
     CStringNulError(ffi::NulError),
+    // TokioIoError(tokio::io::Error),
     HttpStatusError,
 }
 

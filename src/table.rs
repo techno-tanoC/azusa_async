@@ -1,6 +1,9 @@
+use bytes::Bytes;
 use indexmap::IndexMap;
 use tokio::sync::Mutex;
 
+use super::error::Result;
+use super::item::Item;
 use super::progress::Progress;
 
 pub struct Table(Mutex<IndexMap<String, Progress>>);
@@ -18,8 +21,8 @@ impl Table {
         self.0.lock().await.insert(id.to_string(), pg);
     }
 
-    pub async fn delete(&self, id: &str) {
-        self.0.lock().await.remove(id);
+    pub async fn delete(&self, id: &str) -> Option<Progress> {
+        self.0.lock().await.remove(id)
     }
 
     pub async fn set_total(&self, id: &str, total: u64) {
@@ -28,10 +31,12 @@ impl Table {
         });
     }
 
-    pub async fn progress(&self, id: &str, size: u64) {
-        self.0.lock().await.get_mut(id).map(|pg| {
-            pg.progress(size);
-        });
+    pub async fn progress(&self, id: &str, bytes: Bytes) -> Result<()> {
+        let mut _lock = self.0.lock().await;
+        if let Some(pg) = _lock.get_mut(id) {
+            pg.progress(bytes).await?;
+        }
+        Ok(())
     }
 
     pub async fn is_canceled(&self, id: &str) -> Option<bool> {
@@ -46,9 +51,9 @@ impl Table {
         });
     }
 
-    pub async fn to_vec(&self) -> Vec<(String, Progress)> {
+    pub async fn to_vec(&self) -> Vec<Item> {
         self.0.lock().await.iter().map(|(k, v)| {
-            (k.clone(), v.clone())
+            v.make_item(k)
         }).collect()
     }
 }
@@ -73,7 +78,7 @@ mod tests {
     async fn test_simulate() {
         let table = Table::new();
         let id = Table::generate_id();
-        let pg = Progress::new("hello".to_string());
+        let pg = Progress::new("hello".to_string()).unwrap();
 
         table.add(&id, pg).await;
         table.set_total(&id, 1000).await;
@@ -83,9 +88,9 @@ mod tests {
         table.cancel(&id).await;
 
         let vec = table.to_vec().await;
-        let mut ans = Progress::new("hello".to_string());
+        let mut ans = Progress::new("hello".to_string()).unwrap();
         ans.set_total(1000);
-        ans.progress(200);
+        // ans.progress(200);
         ans.cancel();
         assert_eq!(vec, vec![(id.clone(), ans)]);
 
