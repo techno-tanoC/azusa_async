@@ -17,7 +17,7 @@ use app::App;
 
 #[tokio::main]
 async fn main() {
-    env_logger::init();
+    log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
     warp::serve(routes()).run(([0, 0, 0, 0], 3000)).await;
 }
 
