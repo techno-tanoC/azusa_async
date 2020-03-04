@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::path::*;
 use tokio::sync::Mutex;
-use tokio::task;
+use tokio::fs;
 
 pub struct LockCopy(Mutex<()>);
 
@@ -16,16 +16,9 @@ impl LockCopy {
         Q: AsRef<Path>,
     {
         let _lock = self.0.lock().await;
-        let from = from.as_ref().to_path_buf();
-        let path = path.as_ref().to_path_buf();
-        let name = name.to_string();
-        let ext = ext.to_string();
-
-        task::spawn_blocking(move || {
-            let fresh = Self::fresh_name(&path, &name, &ext);
-            std::fs::copy(&from, &fresh).expect("failed to copy");
-            Self::change_owner(&fresh);
-        }).await.unwrap();
+        let fresh = Self::fresh_name(&path, &name, &ext);
+        fs::copy(&from, &fresh).await.unwrap();
+        Self::change_owner(&fresh);
     }
 
     fn fresh_name<P: AsRef<Path>>(path: &P, name: &str, ext: &str) -> PathBuf {
