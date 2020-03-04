@@ -18,7 +18,7 @@ impl LockCopy {
         let _lock = self.0.lock().await;
         let fresh = Self::fresh_name(&path, &name, &ext);
         fs::copy(&from, &fresh).await.unwrap();
-        Self::change_owner(&fresh);
+        Self::change_owner(&fresh).unwrap();
     }
 
     fn fresh_name<P: AsRef<Path>>(path: &P, name: &str, ext: &str) -> PathBuf {
@@ -50,14 +50,19 @@ impl LockCopy {
         name.to_string() + &count + &ext
     }
 
-    fn change_owner<P: AsRef<Path>>(path: &P) {
+    fn change_owner<P: AsRef<Path>>(path: &P) -> Result<(), String> {
         use std::os::unix::ffi::OsStrExt;
         use std::ffi::CString;
 
         let bytes = path.as_ref().as_os_str().as_bytes();
         let s = CString::new(bytes).unwrap();
-        unsafe {
-            libc::chown(s.as_ptr(), 1000, 1000);
+        let ret = unsafe {
+            libc::chown(s.as_ptr(), 1000, 1000)
+        };
+        if ret == -1 {
+            Err(format!("failed chown: {:?}", s))
+        } else {
+            Ok(())
         }
     }
 }
