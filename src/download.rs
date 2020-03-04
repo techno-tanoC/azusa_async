@@ -25,7 +25,7 @@ impl Download {
             let id = Table::generate_id();
             let pg = Progress::new(name.to_string());
             app.table.add(&id, pg).await;
-            debug!("url: {:?}, id: {:?}", url, &id);
+            debug!("name: {:?}, url: {:?}, id: {:?}", &name, url, &id);
 
             if let Some(cl) = Self::content_length(&res) {
                 app.table.set_total(&id, cl).await;
