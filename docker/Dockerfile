@@ -15,7 +15,7 @@ COPY . .
 RUN cargo build --release
 
 
-FROM debian:10.2-slim
+FROM debian:buster-slim
 
 WORKDIR /app
 RUN apt update && apt install -y ca-certificates
