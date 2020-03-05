@@ -19,7 +19,9 @@ use app::App;
 #[tokio::main]
 async fn main() {
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
-    warp::serve(routes()).run(([0, 0, 0, 0], 3000)).await;
+    let path = std::env::var("VOLUME").unwrap_or(".".to_string());
+    let app = App::new(&path);
+    warp::serve(routes(app)).run(([0, 0, 0, 0], 3000)).await;
 }
 
 async fn fetch(app: Arc<App>) -> Result<impl warp::Reply, Infallible> {
@@ -69,8 +71,8 @@ async fn cancel(cancel: Cancel, app: Arc<App>) -> Result<impl warp::Reply, Infal
     Ok(StatusCode::NO_CONTENT)
 }
 
-fn routes() -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    let app = Arc::new(App::new());
+fn routes(app: App) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    let app = Arc::new(app);
 
     let get = warp::path!("download")
         .and(warp::get())
