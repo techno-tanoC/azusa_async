@@ -2,6 +2,7 @@ version: '3.7'
 
 services:
   app:
+    image: techno/azusa:0.1.0
     build:
       context: .
       dockerfile: docker/Dockerfile
