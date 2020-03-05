@@ -1,16 +1,20 @@
+use std::path::{Path, PathBuf};
+
 use super::lock_copy::LockCopy;
 use super::table::Table;
 use super::download::Download;
 
 pub struct App {
+    pub path: PathBuf,
     pub table: Table,
     pub lock_copy: LockCopy,
     pub client: Download,
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub fn new<P: AsRef<Path>>(path: &P) -> Self {
         App {
+            path: path.as_ref().to_path_buf(),
             table: Table::new(),
             lock_copy: LockCopy::new(),
             client: Download::new(),
