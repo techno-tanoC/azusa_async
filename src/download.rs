@@ -57,7 +57,7 @@ impl Download {
 
     fn content_length(res: &Response) -> Option<u64> {
         res.headers()
-            .get(header::CONTENT_LENGTH)
-            .and_then(|val| val.to_str().ok()?.parse().ok())
+            .get(header::CONTENT_LENGTH)?
+            .to_str().ok()?.parse().ok()
     }
 }
