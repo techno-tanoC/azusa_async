@@ -6,6 +6,7 @@ mod lock_copy;
 mod progress;
 mod item;
 mod table;
+mod error;
 
 use serde::Deserialize;
 use std::convert::Infallible;
@@ -44,7 +45,10 @@ async fn start(start: Start, app: Arc<App>) -> Result<impl warp::Reply, Infallib
     let path = ".";
 
     tokio::spawn(async move {
-        app.client.start(&app, &start.url, &path, &start.name, &start.ext).await;
+        let result = app.client.start(&app, &start.url, &path, &start.name, &start.ext).await;
+        if let Err(e) = result {
+            error!("{:?}", e);
+        }
     });
 
     Ok(StatusCode::CREATED)
