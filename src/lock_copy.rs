@@ -3,6 +3,8 @@ use std::path::*;
 use tokio::sync::Mutex;
 use tokio::fs;
 
+use super::error::{Result, Error};
+
 pub struct LockCopy(Mutex<()>);
 
 impl LockCopy {
@@ -10,15 +12,16 @@ impl LockCopy {
         LockCopy(Mutex::new(()))
     }
 
-    pub async fn copy<P, Q>(&self, from: &P, path: &Q, name: &str, ext: &str)
+    pub async fn copy<P, Q>(&self, from: &P, path: &Q, name: &str, ext: &str) -> Result<()>
     where
         P: AsRef<Path>,
         Q: AsRef<Path>,
     {
         let _lock = self.0.lock().await;
         let fresh = Self::fresh_name(&path, &name, &ext);
-        fs::copy(&from, &fresh).await.unwrap();
-        Self::change_owner(&fresh).unwrap();
+        fs::copy(&from, &fresh).await?;
+        Self::change_owner(&fresh)?;
+        Ok(())
     }
 
     fn fresh_name<P: AsRef<Path>>(path: &P, name: &str, ext: &str) -> PathBuf {
@@ -50,17 +53,17 @@ impl LockCopy {
         name.to_string() + &count + &ext
     }
 
-    fn change_owner<P: AsRef<Path>>(path: &P) -> Result<(), String> {
+    fn change_owner<P: AsRef<Path>>(path: &P) -> Result<()> {
         use std::os::unix::ffi::OsStrExt;
         use std::ffi::CString;
 
         let bytes = path.as_ref().as_os_str().as_bytes();
-        let s = CString::new(bytes).unwrap();
+        let s = CString::new(bytes)?;
         let ret = unsafe {
             libc::chown(s.as_ptr(), 1000, 1000)
         };
         if ret == -1 {
-            Err(format!("failed chown: {:?}", s))
+            Err(Error::ChangeOwnerError)
         } else {
             Ok(())
         }
