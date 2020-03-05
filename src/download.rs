@@ -36,8 +36,9 @@ impl Download {
 
             if flag {
                 app.lock_copy.copy(&path, dest, name, ext).await?;
-                app.table.delete(&id).await;
             }
+
+            app.table.delete(&id).await;
         }
         Ok(())
     }
