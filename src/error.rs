@@ -7,7 +7,6 @@ pub enum Error {
     ReqwestError(reqwest::Error),
     IoError(io::Error),
     CStringNulError(ffi::NulError),
-    ChangeOwnerError,
 }
 
 impl From<reqwest::Error> for Error {

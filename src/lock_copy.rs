@@ -6,7 +6,7 @@ use tokio::fs::File;
 use tokio::prelude::*;
 use tokio::io::{*, AsyncSeek};
 
-use super::error::{Result, Error};
+use super::error::Result;
 
 pub struct LockCopy(Mutex<()>);
 
@@ -24,7 +24,6 @@ impl LockCopy {
         let fresh = Self::fresh_name(&path, &name, &ext);
         let mut to = BufWriter::new(File::create(&fresh).await?);
         Self::rewind_and_copy(from, &mut to).await?;
-        Self::change_owner(&fresh)?;
         Ok(())
     }
 
@@ -65,22 +64,6 @@ impl LockCopy {
         };
 
         name.to_string() + &count + &ext
-    }
-
-    fn change_owner<P: AsRef<Path>>(path: &P) -> Result<()> {
-        use std::os::unix::ffi::OsStrExt;
-        use std::ffi::CString;
-
-        let bytes = path.as_ref().as_os_str().as_bytes();
-        let s = CString::new(bytes)?;
-        let ret = unsafe {
-            libc::chown(s.as_ptr(), 1000, 1000)
-        };
-        if ret == -1 {
-            Err(Error::ChangeOwnerError)
-        } else {
-            Ok(())
-        }
     }
 }
 
