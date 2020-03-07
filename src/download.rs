@@ -16,8 +16,7 @@ impl Download {
     }
 
     pub async fn start<P: AsRef<Path>>(&self, app: &App, url: &str, dest: &P, name: &str, ext: &str) -> Result<()> {
-        let (temp, path) = tempfile::NamedTempFile::new()?.into_parts();
-        let mut f: File = temp.into();
+        let mut temp: File = tempfile::tempfile()?.into();
         let mut res = self.0.get(url).send().await?;
 
         debug!("{:?}", &res);
@@ -32,10 +31,10 @@ impl Download {
                 app.table.set_total(&id, cl).await;
             }
 
-            let flag = Self::read_chunks(app, &id, &mut res, &mut f).await?;
+            let flag = Self::read_chunks(app, &id, &mut res, &mut temp).await?;
 
             if flag {
-                app.lock_copy.copy(&path, dest, name, ext).await?;
+                app.lock_copy.copy(&mut temp, dest, name, ext).await?;
             }
 
             app.table.delete(&id).await;
@@ -43,7 +42,7 @@ impl Download {
         Ok(())
     }
 
-    async fn read_chunks(app: &App, id: &str, res: &mut reqwest::Response, f: &mut File) -> Result<bool> {
+    async fn read_chunks<W: AsyncWrite + Unpin>(app: &App, id: &str, res: &mut reqwest::Response, f: &mut W) -> Result<bool> {
         while let Some(byte) = res.chunk().await? {
             if app.table.is_canceled(id).await.unwrap_or(true) {
                 debug!("canceled id: {:?}", id);
