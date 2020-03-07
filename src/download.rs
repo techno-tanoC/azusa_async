@@ -25,20 +25,27 @@ impl Download {
             let id = Table::generate_id();
             let pg = Progress::new(name.to_string());
             app.table.add(&id, pg).await;
+
             debug!("name: {:?}, url: {:?}, id: {:?}", &name, url, &id);
-
-            if let Some(cl) = Self::content_length(&res) {
-                app.table.set_total(&id, cl).await;
-            }
-
-            let flag = Self::read_chunks(app, &id, &mut res, &mut temp).await?;
-
-            if flag {
-                app.lock_copy.copy(&mut temp, dest, name, ext).await?;
-            }
+            let ret = Self::download(app, &id, &mut res, &mut temp, dest, name, ext).await;
 
             app.table.delete(&id).await;
+            ret?;
         }
+        Ok(())
+    }
+
+    async fn download<P: AsRef<Path>>(app: &App, id: &str, res: &mut reqwest::Response, temp: &mut File, dest: &P, name: &str, ext: &str) -> Result<()> {
+        if let Some(cl) = Self::content_length(&res) {
+            app.table.set_total(&id, cl).await;
+        }
+
+        let flag = Self::read_chunks(app, &id, res, temp).await?;
+
+        if flag {
+            app.lock_copy.copy(temp, dest, name, ext).await?;
+        }
+
         Ok(())
     }
 
