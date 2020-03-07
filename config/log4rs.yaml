@@ -6,11 +6,11 @@ appenders:
 
   file:
     kind: file
-    path: log/azusa.log
+    path: ./log/azusa.log
 
   lib:
     kind: file
-    path: log/library.log
+    path: ./log/library.log
 
 root:
   level: info
