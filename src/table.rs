@@ -1,25 +1,31 @@
 use indexmap::IndexMap;
+use tokio::io::AsyncSeek;
+use tokio::prelude::*;
 use tokio::sync::Mutex;
 
+use super::error::Result;
+use super::item::Item;
 use super::progress::Progress;
 
-pub struct Table(Mutex<IndexMap<String, Progress>>);
+pub struct Table<F>(Mutex<IndexMap<String, Progress<F>>>);
 
-impl Table {
+impl Table<()> {
+    pub fn generate_id() -> String {
+        uuid::Uuid::new_v4().to_string()
+    }
+}
+
+impl<F: AsyncRead + AsyncWrite + AsyncSeek + Unpin> Table<F> {
     pub fn new() -> Self {
         Table(Mutex::new(IndexMap::new()))
     }
 
-    pub fn generate_id() -> String {
-        uuid::Uuid::new_v4().to_string()
-    }
-
-    pub async fn add(&self, id: &str, pg: Progress) {
+    pub async fn add(&self, id: &str, pg: Progress<F>) {
         self.0.lock().await.insert(id.to_string(), pg);
     }
 
-    pub async fn delete(&self, id: &str) {
-        self.0.lock().await.shift_remove(id);
+    pub async fn delete(&self, id: &str) -> Option<Progress<F>> {
+        self.0.lock().await.shift_remove(id)
     }
 
     pub async fn set_total(&self, id: &str, total: u64) {
@@ -28,10 +34,11 @@ impl Table {
         });
     }
 
-    pub async fn progress(&self, id: &str, size: u64) {
-        self.0.lock().await.get_mut(id).map(|pg| {
-            pg.progress(size);
-        });
+    pub async fn write<B: AsRef<[u8]>>(&self, id: &str, data: &B) {
+        let mut lock = self.0.lock().await;
+        if let Some(pg) = lock.get_mut(id) {
+            pg.write(data).await.unwrap();
+        }
     }
 
     pub async fn is_canceled(&self, id: &str) -> Option<bool> {
@@ -46,9 +53,9 @@ impl Table {
         });
     }
 
-    pub async fn to_vec(&self) -> Vec<(String, Progress)> {
+    pub async fn to_vec(&self) -> Vec<Item> {
         self.0.lock().await.iter().map(|(k, v)| {
-            (k.clone(), v.clone())
+            Item::from_progress(k.clone(), &v)
         }).collect()
     }
 }

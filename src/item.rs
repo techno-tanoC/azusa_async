@@ -12,10 +12,10 @@ pub struct Item {
 }
 
 impl Item {
-    pub fn from_progress(id: String, pg: Progress) -> Item {
+    pub fn from_progress<F>(id: String, pg: &Progress<F>) -> Item {
         Item {
             id,
-            name: pg.name,
+            name: pg.name.clone(),
             total: pg.total,
             size: pg.size,
             canceled: pg.canceled,

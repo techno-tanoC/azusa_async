@@ -1,7 +1,11 @@
 use std::borrow::Cow;
+use std::io::SeekFrom;
 use std::path::*;
 use tokio::sync::Mutex;
-use tokio::fs;
+use tokio::io;
+use tokio::fs::File;
+use tokio::prelude::*;
+use tokio::io::AsyncSeek;
 
 use super::error::{Result, Error};
 
@@ -12,14 +16,15 @@ impl LockCopy {
         LockCopy(Mutex::new(()))
     }
 
-    pub async fn copy<P, Q>(&self, from: &P, path: &Q, name: &str, ext: &str) -> Result<()>
-    where
-        P: AsRef<Path>,
-        Q: AsRef<Path>,
+    pub async fn copy<P, F: AsyncRead + AsyncSeek + Unpin>(&self, from: &mut F, path: &P, name: &str, ext: &str) -> Result<()>
+    where P: AsRef<Path>
     {
         let _lock = self.0.lock().await;
         let fresh = Self::fresh_name(&path, &name, &ext);
-        fs::copy(&from, &fresh).await?;
+        let mut to = io::BufWriter::new(File::create(&fresh).await?);
+        from.seek(SeekFrom::Start(0)).await?;
+        let mut from = io::BufReader::new(from);
+        io::copy(&mut from, &mut to).await?;
         Self::change_owner(&fresh)?;
         Ok(())
     }

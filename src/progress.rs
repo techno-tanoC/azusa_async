@@ -1,23 +1,32 @@
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Progress {
+use tokio::prelude::*;
+use tokio::io::AsyncSeek;
+
+use super::error::Result;
+
+#[derive(Debug)]
+pub struct Progress<F> {
     pub name: String,
     pub total: u64,
     pub size: u64,
     pub canceled: bool,
+    pub(crate) file: F
 }
 
-impl Progress {
-    pub fn new(name: String) -> Self {
+impl<F: AsyncRead + AsyncWrite + AsyncSeek + std::marker::Unpin> Progress<F> {
+    pub fn new(name: String, file: F) -> Self {
         Progress {
             name,
             total: 0,
             size: 0,
             canceled: false,
+            file,
         }
     }
 
-    pub fn progress(&mut self, size: u64) {
-        self.size += size;
+    pub async fn write<B: AsRef<[u8]>>(&mut self, data: &B) -> Result<()> {
+        let data = data.as_ref();
+        self.size += data.len() as u64;
+        Ok(self.file.write_all(&data).await?)
     }
 
     pub fn set_total(&mut self, total: u64) {
