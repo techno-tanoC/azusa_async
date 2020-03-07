@@ -44,12 +44,19 @@ impl Download {
 
     async fn read_chunks<W: AsyncWrite + Unpin>(app: &App, id: &str, res: &mut reqwest::Response, f: &mut W) -> Result<bool> {
         while let Some(byte) = res.chunk().await? {
-            if app.table.is_canceled(id).await.unwrap_or(true) {
-                debug!("canceled id: {:?}", id);
-                return Ok(false);
-            } else {
-                app.table.progress(id, byte.as_ref().len() as u64).await;
-                f.write_all(&byte).await?;
+            match app.table.is_canceled(id).await {
+                Some(true) => {
+                    debug!("canceled id: {:?}", id);
+                    return Ok(false);
+                },
+                Some(false) => {
+                    app.table.progress(id, byte.as_ref().len() as u64).await;
+                    f.write_all(&byte).await?;
+                },
+                None => {
+                    error!("read_chunks id not found in table: id {:?}", id);
+                    return Ok(false);
+                }
             }
         }
         return Ok(true);
