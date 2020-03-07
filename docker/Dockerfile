@@ -11,6 +11,9 @@ COPY .cargo .cargo
 RUN mkdir src && echo "fn main() {}" > src/main.rs
 RUN cargo build --release
 
+# remove build cache
+RUN rm -rf target/x86_64-unknown-linux-musl/release/.fingerprint/azusa-*
+
 COPY . .
 RUN cargo build --release
 
