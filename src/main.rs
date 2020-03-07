@@ -18,7 +18,7 @@ use app::App;
 
 #[tokio::main]
 async fn main() {
-    log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
+    log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
     let path = std::env::var("VOLUME").unwrap_or(".".to_string());
     let app = App::new(&path);
     warp::serve(routes(app)).run(([0, 0, 0, 0], 3000)).await;
@@ -44,10 +44,8 @@ struct Start {
 async fn start(start: Start, app: Arc<App>) -> Result<impl warp::Reply, Infallible> {
     info!("[POST] /download {:?}", &start);
 
-    let path = ".";
-
     tokio::spawn(async move {
-        let result = app.client.start(&app, &start.url, &path, &start.name, &start.ext).await;
+        let result = app.client.start(&app, &start.url, &app.path, &start.name, &start.ext).await;
         if let Err(e) = result {
             error!("{:?}", e);
         }
