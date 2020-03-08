@@ -12,7 +12,11 @@ pub struct Download(reqwest::Client);
 
 impl Download {
     pub fn new() -> Self {
-        Download(reqwest::Client::new())
+        let client = reqwest::ClientBuilder::new()
+            .danger_accept_invalid_certs(true)
+            .build()
+            .expect("ClientBuilder::build()");
+        Download(client)
     }
 
     pub async fn start<P: AsRef<Path>>(&self, app: &App, url: &str, dest: &P, name: &str, ext: &str) -> Result<()> {
