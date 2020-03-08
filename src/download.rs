@@ -30,7 +30,7 @@ impl Download {
             let pg = Progress::new(name.to_string());
             app.table.add(&id, pg).await;
 
-            debug!("name: {:?}, url: {:?}, id: {:?}", &name, url, &id);
+            info!("name: {:?}, url: {:?}, id: {:?}", &name, url, &id);
             let ret = Self::download(app, &id, &mut res, &mut temp, dest, name, ext).await;
 
             app.table.delete(&id).await;
