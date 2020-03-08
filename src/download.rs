@@ -32,7 +32,7 @@ impl Download {
             app.table.delete(&id).await;
             ret
         } else {
-            Err(Error::NonSuccessStatusError(format!("status: {:?}, url: {:?}, headers: {:?}", res.status(), url, res.headers())))
+            Err(Error::NonSuccessStatusError(format!("{:?}", res)))
         }
     }
 
