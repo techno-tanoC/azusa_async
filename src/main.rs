@@ -19,7 +19,7 @@ use app::App;
 #[tokio::main]
 async fn main() {
     log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
-    let path = std::env::var("VOLUME").unwrap_or(".".to_string());
+    let path = std::env::var("VOLUME").unwrap_or_else(|_| ".".to_string());
     let app = App::new(&path);
     warp::serve(routes(app)).run(([0, 0, 0, 0], 3000)).await;
 }
@@ -69,6 +69,7 @@ async fn cancel(cancel: Cancel, app: Arc<App>) -> Result<impl warp::Reply, Infal
     Ok(StatusCode::NO_CONTENT)
 }
 
+#[allow(clippy::redundant_clone)]
 fn routes(app: App) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     let app = Arc::new(app);
 

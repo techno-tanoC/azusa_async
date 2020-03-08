@@ -66,7 +66,7 @@ impl Download {
                 }
             }
         }
-        return Ok(true);
+        Ok(true)
     }
 
     fn content_length(res: &Response) -> Option<u64> {

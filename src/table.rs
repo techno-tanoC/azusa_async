@@ -22,12 +22,14 @@ impl Table {
         self.0.lock().await.shift_remove(id);
     }
 
+    #[allow(clippy::option_map_unit_fn)]
     pub async fn set_total(&self, id: &str, total: u64) {
         self.0.lock().await.get_mut(id).map(|pg| {
             pg.set_total(total);
         });
     }
 
+    #[allow(clippy::option_map_unit_fn)]
     pub async fn progress(&self, id: &str, size: u64) {
         self.0.lock().await.get_mut(id).map(|pg| {
             pg.progress(size);
@@ -40,6 +42,7 @@ impl Table {
         })
     }
 
+    #[allow(clippy::option_map_unit_fn)]
     pub async fn cancel(&self, id: &str) {
         self.0.lock().await.get_mut(id).map(|pg| {
             pg.cancel();
