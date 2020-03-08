@@ -6,7 +6,7 @@ use tokio::prelude::*;
 use super::app::App;
 use super::progress::Progress;
 use super::table::Table;
-use super::error::Result;
+use super::error::{Result, Error};
 
 pub struct Download(reqwest::Client);
 
@@ -30,9 +30,10 @@ impl Download {
             let ret = Self::download(app, &id, &mut res, &mut temp, dest, name, ext).await;
 
             app.table.delete(&id).await;
-            ret?;
+            ret
+        } else {
+            Err(Error::NonSuccessStatusError(format!("status: {:?}, url: {:?}, headers: {:?}", res.status(), url, res.headers())))
         }
-        Ok(())
     }
 
     async fn download<P: AsRef<Path>>(app: &App, id: &str, res: &mut reqwest::Response, temp: &mut File, dest: &P, name: &str, ext: &str) -> Result<()> {
