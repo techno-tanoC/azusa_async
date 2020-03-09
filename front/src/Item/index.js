@@ -3,8 +3,7 @@ import style from './style.css'
 
 const deleteItem = id => {
   fetch(`http://localhost:3000/download?id=${id}`, {
-    method: 'DELETE',
-    mode: 'no-cors'
+    method: 'DELETE'
   })
 }
 
