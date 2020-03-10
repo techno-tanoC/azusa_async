@@ -1,7 +1,7 @@
 use bytes::Bytes;
 use reqwest::{header, Response};
-use std::path::*;
 use tokio::fs::File;
+use tokio::io::AsyncSeek;
 use tokio::prelude::*;
 use tokio::stream::{Stream, StreamExt};
 
@@ -21,7 +21,7 @@ impl Download {
         Download(client)
     }
 
-    pub async fn start<P: AsRef<Path>>(&self, app: &App, url: &str, dest: &P, name: &str, ext: &str) -> Result<()> {
+    pub async fn start(&self, app: &App, url: &str, name: &str, ext: &str) -> Result<()> {
         let mut temp: File = tempfile::tempfile()?.into();
         let res = self.0.get(url).send().await?;
 
@@ -33,7 +33,7 @@ impl Download {
             app.table.add(&id, pg).await;
 
             info!("name: {:?}, url: {:?}, id: {:?}", &name, url, &id);
-            let ret = Self::download(app, &id, res, &mut temp, dest, name, ext).await;
+            let ret = Self::download(app, &id, res, &mut temp, name, ext).await;
 
             app.table.delete(&id).await;
             ret
@@ -42,16 +42,19 @@ impl Download {
         }
     }
 
-    async fn download<P: AsRef<Path>>(app: &App, id: &str, res: reqwest::Response, temp: &mut File, dest: &P, name: &str, ext: &str) -> Result<()> {
+    async fn download<W>(app: &App, id: &str, res: reqwest::Response, w: &mut W, name: &str, ext: &str) -> Result<()>
+        where
+            W: AsyncRead + AsyncWrite + AsyncSeek + Unpin
+    {
         if let Some(cl) = Self::content_length(&res) {
             app.table.set_total(&id, cl).await;
         }
 
         let mut stream = res.bytes_stream();
-        let flag = Self::read_stream(app, &id, &mut stream, temp).await?;
+        let flag = Self::read_stream(app, &id, &mut stream, w).await?;
 
         if flag {
-            app.lock_copy.copy(temp, dest, name, ext).await?;
+            app.lock_copy.copy(w, &app.path, name, ext).await?;
         }
 
         Ok(())
