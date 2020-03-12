@@ -22,54 +22,51 @@ impl Download {
     }
 
     pub async fn start<P: AsRef<Path>>(&self, app: &App, url: &str, dest: &P, name: &str, ext: &str) -> Result<()> {
+        let id = Table::generate_id();
+        let pg = Progress::new(name.to_string());
+        app.table.add(&id, pg).await;
         let mut temp: File = tempfile::tempfile()?.into();
+        let ret = self.download(app, &id, url, &mut temp, dest, name, ext).await;
+        app.table.delete(&id).await;
+        ret
+    }
+
+    async fn download<P: AsRef<Path>>(&self, app: &App, id: &str, url: &str, temp: &mut File, dest: &P, name: &str, ext: &str) -> Result<()> {
         let res = self.0.get(url).send().await?;
 
         debug!("{:?}", &res);
 
         if res.status().is_success() {
-            let id = Table::generate_id();
-            let pg = Progress::new(name.to_string());
-            app.table.add(&id, pg).await;
-
             info!("name: {:?}, url: {:?}, id: {:?}", &name, url, &id);
-            let ret = Self::download(app, &id, res, &mut temp, dest, name, ext).await;
+            if let Some(cl) = Self::content_length(&res) {
+                app.table.set_total(&id, cl).await;
+            }
 
-            app.table.delete(&id).await;
-            ret
+            let mut stream = res.bytes_stream();
+            let flag = Self::read_stream(&app.table, &id, &mut stream, temp).await?;
+
+            if flag {
+                app.lock_copy.copy(temp, dest, name, ext).await?;
+            }
+            Ok(())
         } else {
             Err(Error::NonSuccessStatusError(format!("{:?}", res)))
         }
     }
 
-    async fn download<P: AsRef<Path>>(app: &App, id: &str, res: reqwest::Response, temp: &mut File, dest: &P, name: &str, ext: &str) -> Result<()> {
-        if let Some(cl) = Self::content_length(&res) {
-            app.table.set_total(&id, cl).await;
-        }
-
-        let mut stream = res.bytes_stream();
-        let flag = Self::read_stream(app, &id, &mut stream, temp).await?;
-
-        if flag {
-            app.lock_copy.copy(temp, dest, name, ext).await?;
-        }
-
-        Ok(())
-    }
-
-    async fn read_stream<W, S>(app: &App, id: &str, stream: &mut S, f: &mut W) -> Result<bool>
+    async fn read_stream<W, S>(table: &Table, id: &str, stream: &mut S, f: &mut W) -> Result<bool>
         where
             W: AsyncWrite + Unpin,
             S: Stream<Item = reqwest::Result<Bytes>> + Unpin
     {
         while let Some(bytes) = stream.next().await.transpose()? {
-            match app.table.is_canceled(id).await {
+            match table.is_canceled(id).await {
                 Some(true) => {
                     debug!("canceled id: {:?}", id);
                     return Ok(false);
                 },
                 Some(false) => {
-                    app.table.progress(id, bytes.as_ref().len() as u64).await;
+                    table.progress(id, bytes.as_ref().len() as u64).await;
                     f.write_all(&bytes).await?;
                 },
                 None => {
@@ -93,6 +90,29 @@ mod tests {
     use super::*;
 
     use http::response;
+    use std::io::Cursor;
+
+    #[tokio::test]
+    async fn read_stream_test1() {
+        let table = Table::new();
+        let (id, name) = ("1".to_string(), "progress".to_string());
+        let pg = Progress::new(name.clone());
+        table.add(&id, pg).await;
+
+        {
+            let mut to: Cursor<Vec<u8>> = Cursor::new(vec![]);
+            let chunks: Vec<reqwest::Result<bytes::Bytes>> = vec![
+                Ok("hello".to_string().into()),
+                Ok("hello".to_string().into())
+            ];
+            let mut stream = tokio::stream::iter(chunks);
+            Download::read_stream(&table, &id, &mut stream, &mut to).await.unwrap();
+        }
+
+        assert_eq!(table.to_vec().await, [(id.clone(), Progress { name, total: 0, size: 10, canceled: false })]);
+
+        table.delete(&id).await;
+    }
 
     #[test]
     fn content_length_test() {
