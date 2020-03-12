@@ -1,0 +1,21 @@
+{
+  "name": "front",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "parcel src/index.html",
+    "build": "parcel build src/index.html",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-plugin-transform-react-jsx": "^6.24.1",
+    "parcel-bundler": "^1.12.4",
+    "postcss-modules": "^1.5.0",
+    "react": "^16.13.0",
+    "react-dom": "^16.13.0"
+  }
+}
