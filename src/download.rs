@@ -87,3 +87,24 @@ impl Download {
             .to_str().ok()?.parse().ok()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use http::response;
+
+    #[test]
+    fn content_length_test() {
+        let mut res = response::Response::new("".to_string());
+        res.headers_mut().insert(header::CONTENT_LENGTH, "1000".parse().unwrap());
+        assert_eq!(Download::content_length(&res.into()), Some(1000));
+
+        let mut res = response::Response::new("".to_string());
+        res.headers_mut().insert(header::CONTENT_LENGTH, "invalid".parse().unwrap());
+        assert_eq!(Download::content_length(&res.into()), None);
+
+        let res = response::Response::new("".to_string()).into();
+        assert_eq!(Download::content_length(&res), None);
+    }
+}

@@ -35,6 +35,7 @@ name = "azusa"
 version = "0.1.0"
 dependencies = [
  "bytes",
+ "http",
  "indexmap",
  "lazy_static",
  "log 0.4.8",
