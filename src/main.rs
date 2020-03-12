@@ -91,7 +91,8 @@ fn routes(app: App) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rej
         .and(with_app(app.clone()))
         .and_then(cancel);
 
-    get.or(post).or(delete)
+    let cors = warp::cors().allow_methods(vec!["GET", "POST", "DELETE"]);
+    get.or(post).or(delete).with(cors)
 }
 
 fn with_app(app: Arc<App>) ->  impl Filter<Extract = (Arc<App>,), Error = std::convert::Infallible> + Clone {
