@@ -98,6 +98,29 @@ mod tests {
         let pg = Progress::new(name.clone());
         table.add(&id, pg).await;
 
+        let ret = {
+            let mut to: Cursor<Vec<u8>> = Cursor::new(vec![]);
+            let chunks: Vec<reqwest::Result<bytes::Bytes>> = vec![
+                Ok("hello".to_string().into()),
+                Ok("hello".to_string().into())
+            ];
+            let mut stream = tokio::stream::iter(chunks);
+            Download::read_stream(&table, &id, &mut stream, &mut to).await
+        };
+
+        assert!(ret.unwrap());
+        assert_eq!(table.to_vec().await, [(id.clone(), Progress { name, total: 0, size: 10, canceled: false })]);
+
+        table.delete(&id).await;
+    }
+
+    #[tokio::test]
+    async fn read_stream_test2() {
+        let table = Table::new();
+        let (id, name) = ("1".to_string(), "progress".to_string());
+        let pg = Progress::new(name.clone());
+        table.add(&id, pg).await;
+
         {
             let mut to: Cursor<Vec<u8>> = Cursor::new(vec![]);
             let chunks: Vec<reqwest::Result<bytes::Bytes>> = vec![
@@ -108,7 +131,41 @@ mod tests {
             Download::read_stream(&table, &id, &mut stream, &mut to).await.unwrap();
         }
 
-        assert_eq!(table.to_vec().await, [(id.clone(), Progress { name, total: 0, size: 10, canceled: false })]);
+        {
+            let mut to: Cursor<Vec<u8>> = Cursor::new(vec![]);
+            let chunks: Vec<reqwest::Result<bytes::Bytes>> = vec![
+                Ok("hello".to_string().into()),
+                Ok("hello".to_string().into())
+            ];
+            let mut stream = tokio::stream::iter(chunks);
+            Download::read_stream(&table, &id, &mut stream, &mut to).await.unwrap();
+        }
+
+        assert_eq!(table.to_vec().await, [(id.clone(), Progress { name, total: 0, size: 20, canceled: false })]);
+
+        table.delete(&id).await;
+    }
+
+    #[tokio::test]
+    async fn read_stream_test3() {
+        let table = Table::new();
+        let (id, name) = ("1".to_string(), "progress".to_string());
+        let pg = Progress::new(name.clone());
+        table.add(&id, pg).await;
+        table.cancel(&id).await;
+
+        let ret = {
+            let mut to: Cursor<Vec<u8>> = Cursor::new(vec![]);
+            let chunks: Vec<reqwest::Result<bytes::Bytes>> = vec![
+                Ok("hello".to_string().into()),
+                Ok("hello".to_string().into())
+            ];
+            let mut stream = tokio::stream::iter(chunks);
+            Download::read_stream(&table, &id, &mut stream, &mut to).await
+        };
+
+        assert!(!ret.unwrap());
+        assert_eq!(table.to_vec().await, [(id.clone(), Progress { name, total: 0, size: 0, canceled: true })]);
 
         table.delete(&id).await;
     }
