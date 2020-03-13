@@ -8,20 +8,25 @@ use tokio::io::{*, AsyncSeek};
 
 use super::error::Result;
 
-pub struct LockCopy(Mutex<()>);
+pub struct LockCopy {
+    mutex: Mutex<()>,
+    path: PathBuf,
+}
 
 impl LockCopy {
-    pub fn new() -> Self {
-        LockCopy(Mutex::new(()))
+    pub fn new<P: AsRef<Path>>(path: &P) -> Self {
+        LockCopy {
+            mutex: Mutex::new(()),
+            path: path.as_ref().to_path_buf()
+        }
     }
 
-    pub async fn copy<F, P>(&self, from: &mut F, path: &P, name: &str, ext: &str) -> Result<()>
+    pub async fn copy<F>(&self, from: &mut F, name: &str, ext: &str) -> Result<()>
         where
-            F: AsyncRead + AsyncSeek + Unpin,
-            P: AsRef<Path>
+            F: AsyncRead + AsyncSeek + Unpin
     {
-        let _lock = self.0.lock().await;
-        let fresh = Self::fresh_name(&path, &name, &ext);
+        let _lock = self.mutex.lock().await;
+        let fresh = Self::fresh_name(&self.path, &name, &ext);
         let mut to = BufWriter::new(File::create(&fresh).await?);
         Self::rewind_and_copy(from, &mut to).await?;
         Ok(())

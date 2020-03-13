@@ -45,7 +45,7 @@ async fn start(start: Start, app: Arc<App>) -> Result<impl warp::Reply, Infallib
     info!("[POST] /download {:?}", &start);
 
     tokio::spawn(async move {
-        let result = app.client.start(&app, &start.url, &app.path, &start.name, &start.ext).await;
+        let result = app.client.start(&app, &start.url, &start.name, &start.ext).await;
         if let Err(e) = result {
             warn!("{:?}", e);
         }

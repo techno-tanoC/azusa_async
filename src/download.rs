@@ -1,6 +1,5 @@
 use bytes::Bytes;
 use reqwest::{header, Response};
-use std::path::*;
 use tokio::fs::File;
 use tokio::prelude::*;
 use tokio::stream::{Stream, StreamExt};
@@ -21,17 +20,17 @@ impl Download {
         Download(client)
     }
 
-    pub async fn start<P: AsRef<Path>>(&self, app: &App, url: &str, dest: &P, name: &str, ext: &str) -> Result<()> {
+    pub async fn start(&self, app: &App, url: &str, name: &str, ext: &str) -> Result<()> {
         let id = Table::generate_id();
         let pg = Progress::new(name.to_string());
         app.table.add(&id, pg).await;
         let mut temp: File = tempfile::tempfile()?.into();
-        let ret = self.download(app, &id, url, &mut temp, dest, name, ext).await;
+        let ret = self.download(app, &id, url, &mut temp, name, ext).await;
         app.table.delete(&id).await;
         ret
     }
 
-    async fn download<P: AsRef<Path>>(&self, app: &App, id: &str, url: &str, temp: &mut File, dest: &P, name: &str, ext: &str) -> Result<()> {
+    async fn download(&self, app: &App, id: &str, url: &str, temp: &mut File, name: &str, ext: &str) -> Result<()> {
         let res = self.0.get(url).send().await?;
 
         debug!("{:?}", &res);
@@ -46,7 +45,7 @@ impl Download {
             let flag = Self::read_stream(&app.table, &id, &mut stream, temp).await?;
 
             if flag {
-                app.lock_copy.copy(temp, dest, name, ext).await?;
+                app.lock_copy.copy(temp, name, ext).await?;
             }
             Ok(())
         } else {
