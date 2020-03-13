@@ -9,15 +9,13 @@ use super::progress::Progress;
 use super::table::Table;
 use super::error::{Result, Error};
 
-pub struct Download(reqwest::Client);
+pub struct Download<'a> {
+    client: &'a reqwest::Client
+}
 
-impl Download {
-    pub fn new() -> Self {
-        let client = reqwest::ClientBuilder::new()
-            .danger_accept_invalid_certs(true)
-            .build()
-            .expect("ClientBuilder::build()");
-        Download(client)
+impl<'a> Download<'a> {
+    pub fn new(client: &reqwest::Client) -> Download {
+        Download { client }
     }
 
     pub async fn start(&self, app: &App, url: &str, name: &str, ext: &str) -> Result<()> {
@@ -31,7 +29,7 @@ impl Download {
     }
 
     async fn download(&self, app: &App, id: &str, url: &str, temp: &mut File, name: &str, ext: &str) -> Result<()> {
-        let res = self.0.get(url).send().await?;
+        let res = self.client.get(url).send().await?;
 
         debug!("{:?}", &res);
 

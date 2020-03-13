@@ -15,6 +15,7 @@ use warp::Filter;
 use warp::http::StatusCode;
 
 use app::App;
+use download::Download;
 
 #[tokio::main]
 async fn main() {
@@ -45,7 +46,8 @@ async fn start(start: Start, app: Arc<App>) -> Result<impl warp::Reply, Infallib
     info!("[POST] /download {:?}", &start);
 
     tokio::spawn(async move {
-        let result = app.client.start(&app, &start.url, &start.name, &start.ext).await;
+        let download = Download::new(&app.client);
+        let result = download.start(&app, &start.url, &start.name, &start.ext).await;
         if let Err(e) = result {
             warn!("{:?}", e);
         }
